@@ -1,24 +1,54 @@
-// backend/server.js
-const express = require('express');
-const app = express();
-const tasksRouter = require('./BACKEND/routes/tasks');
-const port = process.env.PORT || 3000;
+//dependancies to be used
+const express = require ('express');
+const bodyParser = require ('body-parser');
 
+//initialize the server
+const server = express();
 
-//define the array for tasks
-const tasks = [];
+server.use(bodyParser.json());
+let tasks = []; //storage for tasks as array
 
-//route to list tasks
-app.get('/tasks', (req, res) => {
+//GET endpoints to fetch tasks
+app.get("/tasks", (req, res) => {
   res.json(tasks);
 });
-//serve static files
 
+//POST enpoints to create a new task
+app.post("/tasks", (req, res) => {
+  const task = {
+    id: tasks.length + 1,
+    title: req.body.title,
+    completed: req.body.completed || false,
+  };
+  tasks.push(task);
+  res.status(201).json(task);
+});
 
-// Use the tasks routes
-app.use('/api', tasksRouter);
+//PUT endpoint to update existing task with specified id
+app.put("/tasks/:id" , (req, res)=> {
+  const id = parseInt(req.params.id);
+  const task = tasks.find((t) => t.id === id);
+  if(!task){
+    return res.status(404).json({error : "Task not found"});
+  }
+  task.title = req.body.title || task.title;
+  task.completed = req.body.completed || task.completed;
+  res.json(task);
+});
 
-// Start your server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+//DELETE endpoint to remove an existing task with specific id
+app.delete("/tasks/:id" , (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = tasks.findIndex((t) => t.id === id);
+  if (index === -1){
+    return res.status(404).json({error: "Task not found"});
+  }
+  tasks.splice(index,1);
+  res.status(204).send();
+});
+
+//run the server on port 3000
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log('Server is running on port ${PORT}');
 });
